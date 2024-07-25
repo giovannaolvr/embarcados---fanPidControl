@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RPM</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #d9d9d9;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    input[type="number"] {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #143642;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #102b35;
+    }
+  </style>
+  <script>
+    var ws;
+
+    function initWebSocket() {
+      ws = new WebSocket("ws://" + window.location.hostname + "/ws");
+
+      ws.onopen = function(event) {
+        console.log("Connected to WebSocket");
+      };
+
+      ws.onclose = function(event) {
+        console.log("WebSocket is closed. Reconnecting...");
+        setTimeout(initWebSocket, 2000);
+      };
+
+      ws.onerror = function(event) {
+        console.error("WebSocket error observed:", event);
+      };
+    }
+
+    function setRPM() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        var rpm = document.getElementById("rpmInput").value;
+        ws.send("setRPM:" + rpm);
+      } else {
+        console.log("WebSocket is not open. Cannot send message.");
+      }
+    }
+
+    window.onload = function() {
+      initWebSocket();
+    };
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Set RPM</h1>
+    <input type="number" id="rpmInput" placeholder="Enter RPM">
+    <button onclick="setRPM()">Set RPM</button>
+  </div>
+</body>
+</html>
