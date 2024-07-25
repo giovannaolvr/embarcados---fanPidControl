@@ -46,29 +46,34 @@
     }
   </style>
   <script>
-    var ws;
+    var gateway = `ws://${window.location.hostname}/ws`;
+    var websocket;
 
     function initWebSocket() {
-      ws = new WebSocket("ws://" + window.location.hostname + "/ws");
+      console.log('Trying to open a WebSocket connection...');
+      websocket = new WebSocket(gateway);
+      websocket.onopen = onOpen;
+      websocket.onclose = onClose;
+      websocket.onmessage = onMessage;
+    }
 
-      ws.onopen = function(event) {
-        console.log("Connected to WebSocket");
-      };
+    function onOpen(event) {
+      console.log('Connection opened');
+    }
 
-      ws.onclose = function(event) {
-        console.log("WebSocket is closed. Reconnecting...");
-        setTimeout(initWebSocket, 2000);
-      };
+    function onClose(event) {
+      console.log('Connection closed');
+      setTimeout(initWebSocket, 2000);
+    }
 
-      ws.onerror = function(event) {
-        console.error("WebSocket error observed:", event);
-      };
+    function onMessage(event) {
+      console.log('Message from server: ', event.data);
     }
 
     function setRPM() {
-      if (ws && ws.readyState === WebSocket.OPEN) {
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
         var rpm = document.getElementById("rpmInput").value;
-        ws.send("setRPM:" + rpm);
+        websocket.send("setRPM:" + rpm);
       } else {
         console.log("WebSocket is not open. Cannot send message.");
       }

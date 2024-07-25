@@ -6,8 +6,8 @@
 #include <freertos/task.h>
 
 // WiFi credentials
-const char* ssid = "david2";
-const char* password = "1234567890";
+const char* ssid = "joao";
+const char* password = "123456789";
 
 // WebSocket and Web Server
 AsyncWebServer server(80);
@@ -31,7 +31,7 @@ int in1Pin = 12;
 int in2Pin = 14;
 
 double u, kp;
-long rpmMax = 4080; // It requires validation - apply 255 to ENABLE A and measure speed RPM
+long rpmMax = 3200; // It requires validation - apply 255 to ENABLE A and measure speed RPM
 
 // ISR fan rotations
 void IRAM_ATTR countPulses() {
@@ -58,7 +58,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     if (strncmp((char*)data, "setRPM:", 7) == 0) {
       String message = String((char*)data);
       message.remove(0, 7); // Remove "setRPM:" from the string
-      rpmInput = message.toInt();
+      rpmSetpoint = message.toInt();
       notifyClients();
     }
   }
@@ -85,6 +85,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 void initWebSocket() {
   ws.onEvent(onEvent);
   server.addHandler(&ws);
+  Serial.print("INICIADO websocket");
 }
 
 // Timer Callbacks
@@ -106,6 +107,9 @@ void taskPrintGraph(void *parameters) {
     Serial.print(0);
     Serial.print(" ");
     Serial.print(rpmInput);
+    Serial.print(0);
+    Serial.print(" ");
+    Serial.print(rpmSetpoint);
     Serial.println(); 
     vTaskDelay(pdMS_TO_TICKS(100));
   }
@@ -130,6 +134,23 @@ void taskGetSetPoint(void *parameters) {
 void setup() {
   Serial.begin(115200);
 
+  if (!LittleFS.begin()) {
+    Serial.println("An Error has occurred while mounting LittleFS");
+    return;
+  }
+
+  File file = LittleFS.open("/index.html", "r");
+  if (!file) {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+
+  Serial.println("File Content:");
+  while (file.available()) {
+    Serial.write(file.read());
+  }
+  file.close();
+
   // Conexão WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -141,7 +162,7 @@ void setup() {
   // Inicializar WebSocket
   initWebSocket();
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/index.html", "text/html");
+    request->send(LittleFS, "/index.html", "text/html",false);
   });
   server.begin();
 
